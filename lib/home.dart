@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'kmap_2x4.dart';
 
 class CommaInputFormatter extends TextInputFormatter {
   @override
@@ -16,7 +17,8 @@ class CommaInputFormatter extends TextInputFormatter {
         oldValue.text.endsWith(", ") &&
         cursorPosition > 0;
 
-    List<String> parts = text.split(',')
+    List<String> parts = text
+        .split(',')
         .map((e) => e.trim())
         .where((e) => e.isEmpty || RegExp(r'^[0-3]$').hasMatch(e))
         .toList();
@@ -176,11 +178,13 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, bool isPrime) {
+  Widget _buildInputField(
+      String label, TextEditingController controller, bool isPrime) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
           inputFormatters: [CommaInputFormatter()],
@@ -204,20 +208,23 @@ class _HomePageState extends State<HomePage> {
         title: const Text("MAP-X"),
         actions: [
           _buildGridButton("2×2", 1),
-          _buildGridButton("2×3", 2),
+          _buildGridButton("2×4", 2),
           _buildGridButton("4×4", 3),
         ],
       ),
       body: Center(
         child: selectedGrid == 1
             ? buildKMap()
-            : Text(
-                selectedGrid == -1
-                    ? "Welcome to K Map Solver\n\nMini Project for Digital Logic"
-                    : "Unavailable",
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            : selectedGrid == 2
+                ? KMap2x4()
+                : Text(
+                    selectedGrid == -1
+                        ? "Welcome to K Map Solver\n\nMini Project for Digital Logic"
+                        : "Unavailable",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
       ),
     );
   }
@@ -228,10 +235,16 @@ class _HomePageState extends State<HomePage> {
       child: TextButton(
         onPressed: () => updateDisplay(gridType),
         style: TextButton.styleFrom(
-          foregroundColor: selectedGrid == gridType ? Colors.white : Colors.black,
-          backgroundColor: selectedGrid == gridType ? Colors.blue : Colors.transparent,
+          foregroundColor:
+              selectedGrid == gridType ? Colors.white : Colors.black,
+          backgroundColor:
+              selectedGrid == gridType ? Colors.blue : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
-        child: Text(label),
+        child: Text(label, style: const TextStyle(fontSize: 16)),
       ),
     );
   }
