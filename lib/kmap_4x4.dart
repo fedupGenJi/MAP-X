@@ -1,6 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+class SlantedCell extends StatelessWidget {
+  final String text;
+
+  SlantedCell(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> parts = text.split(r"\");
+    String leftText = parts.isNotEmpty ? parts[0] : "";
+    String rightText = parts.length > 1 ? parts[1] : "";
+
+    return Container(
+      height: 50,
+      width: 50,
+      child: Stack(
+        children: [
+          CustomPaint(
+            painter: SlantedCellPainter(),
+            child: Container(),
+          ),
+
+          Align(
+            alignment: Alignment(-0.5, 0.5),
+            child: Text(
+              leftText,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+
+          Align(
+            alignment: Alignment(0.5, -0.5), 
+            child: Text(
+              rightText,
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SlantedCellPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    var paint = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(Offset(0, 0), Offset(size.width, size.height), paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
 class CommaInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -128,7 +185,7 @@ class _KMap4x4State extends State<KMap4x4> {
           children: [
             TableRow(
               children: [
-                _buildCell(""),
+                SlantedCell("AB\\CD"),
                 _buildCell("C̅D̅"),
                 _buildCell("C̅D"),
                 _buildCell("CD"),
