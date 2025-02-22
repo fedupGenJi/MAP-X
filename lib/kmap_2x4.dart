@@ -62,7 +62,7 @@ class _KMap2x4State extends State<KMap2x4> {
   void updateMap(String input, bool isPrime) {
     Set<int> newValues = {};
     List<String> inputValues = input.split(',').map((e) => e.trim()).toList();
-    
+
     for (String value in inputValues) {
       if (value.isNotEmpty && RegExp(r'^[0-7]$').hasMatch(value)) {
         newValues.add(int.parse(value));
@@ -80,11 +80,13 @@ class _KMap2x4State extends State<KMap2x4> {
     });
   }
 
-  Widget _buildInputField(String label, TextEditingController controller, bool isPrime) {
+  Widget _buildInputField(
+      String label, TextEditingController controller, bool isPrime) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
           inputFormatters: [CommaInputFormatter()],
@@ -153,13 +155,21 @@ class _KMap2x4State extends State<KMap2x4> {
 
   Widget _buildCell(String text, [bool isValueCell = false]) {
     return Container(
-      height: 40,
-      width: 40,
+      height: 50,
+      width: 50,
       alignment: Alignment.center,
-      color: isValueCell ? Colors.grey[300] : Colors.transparent,
+      decoration: BoxDecoration(
+        color: isValueCell ? Colors.blueGrey[100] : Colors.transparent,
+        border: Border.all(color: Colors.black54, width: 1),
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: isValueCell ? Colors.black87 : Colors.black,
+        ),
       ),
     );
   }

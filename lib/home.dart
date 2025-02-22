@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'kmap_2x4.dart';
+import 'kmap_4x4.dart';
 
 class CommaInputFormatter extends TextInputFormatter {
   @override
@@ -167,13 +168,21 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildCell(String text, [bool isValueCell = false]) {
     return Container(
-      height: 40,
-      width: 40,
+      height: 50,
+      width: 50,
       alignment: Alignment.center,
-      color: isValueCell ? Colors.grey[300] : Colors.transparent,
+      decoration: BoxDecoration(
+        color: isValueCell ? Colors.blueGrey[100] : Colors.transparent,
+        border: Border.all(color: Colors.black54, width: 1),
+        borderRadius: BorderRadius.circular(4),
+      ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: isValueCell ? Colors.black87 : Colors.black,
+        ),
       ),
     );
   }
@@ -217,14 +226,16 @@ class _HomePageState extends State<HomePage> {
             ? buildKMap()
             : selectedGrid == 2
                 ? KMap2x4()
-                : Text(
-                    selectedGrid == -1
-                        ? "Welcome to K Map Solver\n\nMini Project for Digital Logic"
-                        : "Unavailable",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                : selectedGrid == 3
+                    ? KMap4x4()
+                    : Text(
+                        selectedGrid == -1
+                            ? "Welcome to K Map Solver\n\nMini Project for Digital Logic"
+                            : "Unavailable",
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
       ),
     );
   }
