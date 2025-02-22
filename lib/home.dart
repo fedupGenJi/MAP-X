@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInputField("πm:", piemController, true),
+              _buildInputField("∑m:", piemController, true),
               const SizedBox(height: 10),
               _buildInputField("d:", dController, false),
             ],
