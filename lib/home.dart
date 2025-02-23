@@ -61,6 +61,8 @@ class SlantedCellPainter extends CustomPainter {
 }
 
 class CommaInputFormatter extends TextInputFormatter {
+  final Set<int> existingValues;
+  CommaInputFormatter(this.existingValues);
   @override
   TextEditingValue formatEditUpdate(
       TextEditingValue oldValue, TextEditingValue newValue) {
@@ -71,26 +73,20 @@ class CommaInputFormatter extends TextInputFormatter {
       return oldValue;
     }
 
-    bool isDeletingComma = oldValue.text.length > newValue.text.length &&
-        oldValue.text.endsWith(", ") &&
-        cursorPosition > 0;
-
     List<String> parts = text
         .split(',')
         .map((e) => e.trim())
         .where((e) => e.isEmpty || RegExp(r'^[0-3]$').hasMatch(e))
         .toList();
 
-    String formattedText = parts.join(', ');
+    Set<int> uniqueValues = {};
+    String formattedText = '';
 
-    if (cursorPosition > 0 &&
-        cursorPosition < formattedText.length &&
-        formattedText[cursorPosition - 1] == ',') {
-      cursorPosition++;
-    }
-
-    if (isDeletingComma) {
-      cursorPosition -= 2;
+    for (String part in parts) {
+      int num = int.parse(part);
+      if (!existingValues.contains(num) && uniqueValues.add(num)) {
+        formattedText += (formattedText.isEmpty ? '' : ',') + part;
+      }
     }
 
     cursorPosition = cursorPosition.clamp(0, formattedText.length);
@@ -146,10 +142,10 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       if (isPrime) {
-        newValues.removeWhere((num) => dontCares.contains(num));
+        dontCares.removeAll(newValues); 
         primeImplicants = newValues;
       } else {
-        newValues.removeWhere((num) => primeImplicants.contains(num));
+        primeImplicants.removeAll(newValues);
         dontCares = newValues;
       }
     });
@@ -162,9 +158,9 @@ class _HomePageState extends State<HomePage> {
   void refreshTextFields(bool isPrime) {
     setState(() {
       if (isPrime) {
-        piemController.text = primeImplicants.join(', ');
+        piemController.text = primeImplicants.join(',');
       } else {
-        dController.text = dontCares.join(', ');
+        dController.text = dontCares.join(',');
       }
     });
   }
@@ -200,7 +196,7 @@ class _HomePageState extends State<HomePage> {
                     _buildCell(
                       primeImplicants.contains(positions[i][j])
                           ? "1"
-                          : (dontCares.contains(positions[i][j]) ? "X" : ""),
+                          : (dontCares.contains(positions[i][j]) ? "X" : "0"),
                       true,
                     ),
                 ],
@@ -253,7 +249,7 @@ class _HomePageState extends State<HomePage> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
-          inputFormatters: [CommaInputFormatter()],
+          inputFormatters: [CommaInputFormatter(isPrime ? dontCares : primeImplicants)],
           keyboardType: TextInputType.number,
           onChanged: (value) {
             updateMap(value, isPrime);

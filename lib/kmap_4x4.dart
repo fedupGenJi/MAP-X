@@ -21,7 +21,6 @@ class SlantedCell extends StatelessWidget {
             painter: SlantedCellPainter(),
             child: Container(),
           ),
-
           Align(
             alignment: Alignment(-0.5, 0.5),
             child: Text(
@@ -29,9 +28,8 @@ class SlantedCell extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-
           Align(
-            alignment: Alignment(0.5, -0.5), 
+            alignment: Alignment(0.5, -0.5),
             child: Text(
               rightText,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -59,6 +57,9 @@ class SlantedCellPainter extends CustomPainter {
 }
 
 class CommaInputFormatter extends TextInputFormatter {
+  final Set<int> existingValues;
+  CommaInputFormatter(this.existingValues);
+
   @override
   TextEditingValue formatEditUpdate(
       TextEditingValue oldValue, TextEditingValue newValue) {
@@ -69,30 +70,30 @@ class CommaInputFormatter extends TextInputFormatter {
       return oldValue;
     }
 
-    bool isDeletingComma = oldValue.text.length > newValue.text.length &&
-        oldValue.text.endsWith(", ") &&
-        cursorPosition > 0;
+    List<String> parts = text.split(',').map((e) => e.trim()).toList();
 
-    List<String> parts = text
-        .split(',')
-        .map((e) => e.trim())
-        .where((e) =>
-            e.isEmpty ||
-            (RegExp(r'^[0-9]+$').hasMatch(e) &&
-                int.tryParse(e) != null &&
-                int.parse(e) <= 15))
-        .toList();
+    Set<int> uniqueValues = {};
+    String formattedText = '';
+    String lastPart = parts.isNotEmpty ? parts.last : '';
 
-    String formattedText = parts.join(', ');
+    for (int i = 0; i < parts.length - 1; i++) {
+      String part = parts[i];
 
-    if (cursorPosition > 0 &&
-        cursorPosition < formattedText.length &&
-        formattedText[cursorPosition - 1] == ',') {
-      cursorPosition++;
+      if (RegExp(r'^[0-9]+$').hasMatch(part) &&
+          int.tryParse(part) != null &&
+          int.parse(part) <= 15) {
+        int num = int.parse(part);
+        if (!existingValues.contains(num) && uniqueValues.add(num)) {
+          formattedText += (formattedText.isEmpty ? '' : ',') + part;
+        }
+      }
     }
 
-    if (isDeletingComma) {
-      cursorPosition -= 2;
+    if (lastPart.isEmpty ||
+        RegExp(r'^[0-9]+$').hasMatch(lastPart) &&
+            int.tryParse(lastPart) != null &&
+            int.parse(lastPart) <= 15) {
+      formattedText += (formattedText.isEmpty ? '' : ',') + lastPart;
     }
 
     cursorPosition = cursorPosition.clamp(0, formattedText.length);
@@ -125,10 +126,11 @@ class _KMap4x4State extends State<KMap4x4> {
   void updateMap(String input, bool isPrime) {
     if (input.isEmpty) {
       setState(() {
-        if (isPrime)
+        if (isPrime) {
           primeImplicants.clear();
-        else
+        } else {
           dontCares.clear();
+        }
       });
       return;
     }
@@ -143,15 +145,28 @@ class _KMap4x4State extends State<KMap4x4> {
 
     setState(() {
       if (isPrime) {
-        primeImplicants = newValues.difference(dontCares);
+        newValues.forEach((num) => dontCares.remove(num));
+        primeImplicants.addAll(newValues);
       } else {
-        dontCares = newValues.difference(primeImplicants);
+        newValues.forEach((num) => primeImplicants.remove(num));
+        dontCares.addAll(newValues);
       }
+
+      primeImplicants.removeAll(dontCares);
+      dontCares.removeAll(primeImplicants);
     });
   }
 
   Widget _buildInputField(
       String label, TextEditingController controller, bool isPrime) {
+    FocusNode focusNode = FocusNode();
+
+    focusNode.addListener(() {
+      if (!focusNode.hasFocus) {
+        updateMap(controller.text, isPrime);
+      }
+    });
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -159,9 +174,16 @@ class _KMap4x4State extends State<KMap4x4> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
-          inputFormatters: [CommaInputFormatter()],
+          focusNode: focusNode,
+          inputFormatters: [
+            CommaInputFormatter(isPrime ? dontCares : primeImplicants)
+          ],
           keyboardType: TextInputType.number,
-          onChanged: (value) => updateMap(value, isPrime),
+          onChanged: (value) {
+            if (value.isNotEmpty && value.endsWith(',')) {
+              updateMap(value, isPrime);
+            }
+          },
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
             hintText: "Enter values separated by commas (0-15)",
@@ -206,7 +228,7 @@ class _KMap4x4State extends State<KMap4x4> {
                     _buildCell(
                       primeImplicants.contains(positions[i][j])
                           ? "1"
-                          : (dontCares.contains(positions[i][j]) ? "X" : ""),
+                          : (dontCares.contains(positions[i][j]) ? "X" : "0"),
                       true,
                     ),
                 ],
