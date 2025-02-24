@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'kmap_2x4.dart';
 import 'kmap_4x4.dart';
+import 'soln2x2.dart';
 
 class SlantedCell extends StatelessWidget {
   final String text;
@@ -23,7 +24,6 @@ class SlantedCell extends StatelessWidget {
             painter: SlantedCellPainter(),
             child: Container(),
           ),
-
           Align(
             alignment: Alignment(-0.5, 0.5),
             child: Text(
@@ -31,9 +31,8 @@ class SlantedCell extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-
           Align(
-            alignment: Alignment(0.5, -0.5), 
+            alignment: Alignment(0.5, -0.5),
             child: Text(
               rightText,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -142,7 +141,7 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       if (isPrime) {
-        dontCares.removeAll(newValues); 
+        dontCares.removeAll(newValues);
         primeImplicants = newValues;
       } else {
         primeImplicants.removeAll(newValues);
@@ -212,6 +211,81 @@ class _HomePageState extends State<HomePage> {
               _buildInputField("∑m:", piemController, true),
               const SizedBox(height: 10),
               _buildInputField("d:", dController, false),
+              const SizedBox(height: 25),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      piemController.clear();
+                      dController.clear();
+                      primeImplicants.clear();
+                      dontCares.clear();
+                    });
+                  },
+                  icon: Icon(Icons.close, color: Colors.black),
+                  label: Text("Clear", style: TextStyle(color: Colors.black)),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Align(
+                alignment: Alignment.center,
+                child: TextButton.icon(
+                  onPressed: () {
+                    List<List<String>> kMap = [
+                      [
+                        primeImplicants.contains(0)
+                            ? "1"
+                            : (dontCares.contains(0) ? "X" : "0"),
+                        primeImplicants.contains(1)
+                            ? "1"
+                            : (dontCares.contains(1) ? "X" : "0"),
+                      ],
+                      [
+                        primeImplicants.contains(2)
+                            ? "1"
+                            : (dontCares.contains(2) ? "X" : "0"),
+                        primeImplicants.contains(3)
+                            ? "1"
+                            : (dontCares.contains(3) ? "X" : "0"),
+                      ],
+                    ];
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => KMapPage(kMap: kMap),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.check, color: Colors.white),
+                  label: Text(
+                    "Solve",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue.shade500,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    elevation: 3,
+                  ),
+                ),
+              )
             ],
           ),
         ),
@@ -249,7 +323,9 @@ class _HomePageState extends State<HomePage> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
-          inputFormatters: [CommaInputFormatter(isPrime ? dontCares : primeImplicants)],
+          inputFormatters: [
+            CommaInputFormatter(isPrime ? dontCares : primeImplicants)
+          ],
           keyboardType: TextInputType.number,
           onChanged: (value) {
             updateMap(value, isPrime);

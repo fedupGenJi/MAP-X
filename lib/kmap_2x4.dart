@@ -199,6 +199,28 @@ class _KMap2x4State extends State<KMap2x4> {
               _buildInputField("∑m:", piemController, true),
               const SizedBox(height: 10),
               _buildInputField("d:", dController, false),
+              const SizedBox(height: 25),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      piemController.clear();
+                      dController.clear();
+                      primeImplicants.clear();
+                      dontCares.clear();
+                    });
+                  },
+                  icon: Icon(Icons.close, color: Colors.black),
+                  label: Text("Clear", style: TextStyle(color: Colors.black)),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
