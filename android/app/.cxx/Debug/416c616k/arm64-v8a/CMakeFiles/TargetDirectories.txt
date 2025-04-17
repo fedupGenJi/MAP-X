@@ -1,0 +1,2 @@
+A:/k-MapSolver/miniproj/android/app/.cxx/Debug/416c616k/arm64-v8a/CMakeFiles/edit_cache.dir
+A:/k-MapSolver/miniproj/android/app/.cxx/Debug/416c616k/arm64-v8a/CMakeFiles/rebuild_cache.dir
