@@ -20,7 +20,6 @@ class KMapPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     List<RRect> highlightedGroups = _findGroups(kMap);
-    String solution = _generateSolution(highlightedGroups);
 
     return Scaffold(
       appBar: AppBar(title: Text('2x2 k-Map Solver')),
@@ -84,20 +83,9 @@ class KMapPage extends StatelessWidget {
             child: SingleChildScrollView(
               child: Container(
                 padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomPaint(
-                      size: Size(100, 100),
-                      painter: KMapPainter(kMap, highlightedGroups),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Solution: $solution',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                child: CustomPaint(
+                  size: Size(100, 100),
+                  painter: KMapPainter(kMap, highlightedGroups),
                 ),
               ),
             ),
@@ -202,55 +190,6 @@ class KMapPage extends StatelessWidget {
     prioritizeGroups();
     confirmGroups();
     return groups;
-  }
-
-  String _generateSolution(List<RRect> groups) {
-    final cellVariables = {
-      Offset(0, 0): ["A'", "B'"],
-      Offset(0, 1): ["A'", "B"],
-      Offset(1, 0): ["A", "B'"],
-      Offset(1, 1): ["A", "B"],
-    };
-
-    List<String> expressions = [];
-
-    for (var group in groups) {
-      List<Offset> cells = [];
-
-      double top = group.top;
-      double left = group.left;
-      double cellSize = 50.0;
-
-      int startRow = (top / cellSize).round();
-      int startCol = (left / cellSize).round();
-      int rows = (group.height / cellSize).round();
-      int cols = (group.width / cellSize).round();
-
-      for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-          Offset offset =
-              Offset((startRow + i).toDouble(), (startCol + j).toDouble());
-          cells.add(offset);
-        }
-      }
-
-      if (cells.isEmpty) continue;
-
-      // Start with variable set of the first cell
-      Set<String> commonVars = Set.from(cellVariables[cells[0]]!);
-
-      for (int i = 1; i < cells.length; i++) {
-        final vars = Set.from(cellVariables[cells[i]]!);
-        commonVars = commonVars.intersection(vars);
-      }
-
-      expressions.add(commonVars.join());
-    }
-
-    if (expressions.isEmpty) return '0';
-    if (expressions.length == 1 && expressions[0] == '') return '1';
-
-    return expressions.join(' + ');
   }
 }
 
