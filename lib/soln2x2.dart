@@ -19,8 +19,20 @@ class KMapPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<RRect> highlightedGroups = _findGroups(kMap);
-    String solution = _generateSolution(highlightedGroups);
+    List<List<RRect>> allGroupingSolutions = _findAllGroupingSolutions(kMap);
+    List<MapEntry<List<RRect>, String>> allSolutionsWithExpr =
+        allGroupingSolutions.map((groups) {
+      String expr = _generateSolution(groups);
+      return MapEntry(groups, expr);
+    }).toList();
+
+    int minLength = allSolutionsWithExpr
+        .map((e) => e.value.split(' + ').length)
+        .reduce((a, b) => a < b ? a : b);
+
+    List<MapEntry<List<RRect>, String>> minimalSolutions = allSolutionsWithExpr
+        .where((e) => e.value.split(' + ').length == minLength)
+        .toList();
 
     return Scaffold(
       appBar: AppBar(title: Text('2x2 k-Map Solver')),
@@ -81,25 +93,51 @@ class KMapPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomPaint(
-                      size: Size(100, 100),
-                      painter: KMapPainter(kMap, highlightedGroups),
-                    ),
-                    SizedBox(height: 20),
-                    Text(
-                      'Solution: $solution',
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
+            child: ListView.builder(
+              itemCount: minimalSolutions.length,
+              itemBuilder: (context, index) {
+                final groups = minimalSolutions[index].key;
+                final expression = minimalSolutions[index].value;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Solution ${index + 1}:',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 10),
+                      Center(
+                        child: CustomPaint(
+                          size: Size(100, 100),
+                          painter: KMapPainter(kMap, groups),
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Boolean Expression: ',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w500),
+                          ),
+                          Expanded(
+                            child: Text(
+                              expression,
+                              style: TextStyle(fontSize: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -107,101 +145,88 @@ class KMapPage extends StatelessWidget {
     );
   }
 
-  List<RRect> _findGroups(List<List<String>> kMap) {
+  List<List<RRect>> _findAllGroupingSolutions(List<List<String>> kMap) {
     final cellSize = 50.0;
     final double padding = 6.0;
-    List<RRect> groups = [];
-    List<List<Offset>> tempGroups = [];
-    Set<Offset> coveredCells = {};
 
-    bool isOne(int x, int y) {
-      return kMap[x][y] == '1';
+    List<List<Offset>> candidateGroups = [];
+
+    bool isExpandable(int x, int y) => kMap[x][y] == '1' || kMap[x][y] == 'X';
+    bool isOne(int row, int col) {
+      return kMap[row][col] == '1';
     }
 
-    bool isExpandable(int x, int y) {
-      return kMap[x][y] == '1' || kMap[x][y] == 'X';
+    void addGroup(List<Offset> cells) {
+      candidateGroups.add(cells);
     }
 
-    void addTempGroup(int x, int y, double width, double height, double radius,
-        List<Offset> cells) {
-      tempGroups.add(cells);
+    if (isExpandable(0, 0) && isExpandable(0, 1)) {
+      addGroup([Offset(0, 0), Offset(0, 1)]);
     }
-
-    void prioritizeGroups() {
-      tempGroups.sort((a, b) {
-        int countA =
-            a.where((cell) => isOne(cell.dx.toInt(), cell.dy.toInt())).length;
-        int countB =
-            b.where((cell) => isOne(cell.dx.toInt(), cell.dy.toInt())).length;
-        return countB.compareTo(countA);
-      });
+    if (isExpandable(1, 0) && isExpandable(1, 1)) {
+      addGroup([Offset(1, 0), Offset(1, 1)]);
     }
-
-    void confirmGroups() {
-      for (var group in tempGroups) {
-        bool hasUncoveredOne = false;
-        for (var cell in group) {
-          if (isOne(cell.dx.toInt(), cell.dy.toInt()) &&
-              !coveredCells.contains(cell)) {
-            hasUncoveredOne = true;
-            break;
-          }
-        }
-        if (hasUncoveredOne) {
-          groups.add(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(
-                  group.first.dy * cellSize + padding,
-                  group.first.dx * cellSize + padding,
-                  (group.last.dy - group.first.dy + 1) * cellSize - 2 * padding,
-                  (group.last.dx - group.first.dx + 1) * cellSize -
-                      2 * padding),
-              Radius.circular(15),
-            ),
-          );
-          coveredCells.addAll(group);
-        }
-      }
+    if (isExpandable(0, 0) && isExpandable(1, 0)) {
+      addGroup([Offset(0, 0), Offset(1, 0)]);
     }
-
+    if (isExpandable(0, 1) && isExpandable(1, 1)) {
+      addGroup([Offset(0, 1), Offset(1, 1)]);
+    }
     if (isExpandable(0, 0) &&
         isExpandable(0, 1) &&
         isExpandable(1, 0) &&
         isExpandable(1, 1)) {
-      addTempGroup(0, 0, cellSize * 2 - 2 * padding, cellSize * 2 - 2 * padding,
-          20, [Offset(0, 0), Offset(0, 1), Offset(1, 0), Offset(1, 1)]);
-    }
-
-    if (isExpandable(0, 0) && isExpandable(0, 1)) {
-      addTempGroup(0, 0, cellSize * 2 - 2 * padding, cellSize - 2 * padding, 15,
-          [Offset(0, 0), Offset(0, 1)]);
-    }
-    if (isExpandable(1, 0) && isExpandable(1, 1)) {
-      addTempGroup(1, 0, cellSize * 2 - 2 * padding, cellSize - 2 * padding, 15,
-          [Offset(1, 0), Offset(1, 1)]);
-    }
-    if (isExpandable(0, 0) && isExpandable(1, 0)) {
-      addTempGroup(0, 0, cellSize - 2 * padding, cellSize * 2 - 2 * padding, 15,
-          [Offset(0, 0), Offset(1, 0)]);
-    }
-    if (isExpandable(0, 1) && isExpandable(1, 1)) {
-      addTempGroup(0, 1, cellSize - 2 * padding, cellSize * 2 - 2 * padding, 15,
-          [Offset(0, 1), Offset(1, 1)]);
+      addGroup([
+        Offset(0, 0),
+        Offset(0, 1),
+        Offset(1, 0),
+        Offset(1, 1),
+      ]);
     }
 
     for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 2; j++) {
-        if (isOne(i, j) &&
-            !coveredCells.contains(Offset(i.toDouble(), j.toDouble()))) {
-          addTempGroup(i, j, cellSize - 2 * padding, cellSize - 2 * padding, 30,
-              [Offset(i.toDouble(), j.toDouble())]);
+        if (isOne(i, j)) {
+          addGroup([Offset(i.toDouble(), j.toDouble())]);
         }
       }
     }
 
-    prioritizeGroups();
-    confirmGroups();
-    return groups;
+    List<List<RRect>> allSolutions = [];
+
+    void backtrack(List<List<Offset>> path, int index, Set<Offset> used) {
+      if (index == candidateGroups.length) {
+        if (used.any((c) => isOne(c.dx.toInt(), c.dy.toInt()))) {
+          allSolutions.add(path.map((group) {
+            final topLeft = group.first;
+            final bottomRight = group.last;
+            return RRect.fromRectAndRadius(
+              Rect.fromLTWH(
+                topLeft.dy * cellSize + padding,
+                topLeft.dx * cellSize + padding,
+                (bottomRight.dy - topLeft.dy + 1) * cellSize - 2 * padding,
+                (bottomRight.dx - topLeft.dx + 1) * cellSize - 2 * padding,
+              ),
+              Radius.circular(15),
+            );
+          }).toList());
+        }
+        return;
+      }
+
+      final group = candidateGroups[index];
+      if (group.any((c) => used.contains(c))) {
+        backtrack(path, index + 1, used);
+      } else {
+        path.add(group);
+        backtrack(path, index + 1, {...used, ...group});
+        path.removeLast();
+        backtrack(path, index + 1, used);
+      }
+    }
+
+    backtrack([], 0, {});
+    return allSolutions;
   }
 
   String _generateSolution(List<RRect> groups) {
@@ -236,7 +261,6 @@ class KMapPage extends StatelessWidget {
 
       if (cells.isEmpty) continue;
 
-      // Start with variable set of the first cell
       Set<String> commonVars = Set.from(cellVariables[cells[0]]!);
 
       for (int i = 1; i < cells.length; i++) {
