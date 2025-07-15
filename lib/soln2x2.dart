@@ -189,6 +189,39 @@ class _KMapPageState extends State<KMapPage> {
     return rrects;
   }
 
+  String coordinateToLiteral(int row, int col) {
+    String a = row == 0 ? "A'" : "A";
+    String b = col == 0 ? "B'" : "B";
+    return "$a$b";
+  }
+
+  String groupToExpression(List<List<int>> group) {
+     if (group.length == 4) {
+    return "1";
+  }
+    Set<String> aSet = {}, bSet = {};
+    for (var coord in group) {
+      aSet.add(coord[0] == 0 ? "0" : "1");
+      bSet.add(coord[1] == 0 ? "0" : "1");
+    }
+
+    String aExpr = aSet.length == 1 ? (aSet.contains("0") ? "A'" : "A") : "";
+    String bExpr = bSet.length == 1 ? (bSet.contains("0") ? "B'" : "B") : "";
+
+    return aExpr + bExpr;
+  }
+
+  void printBooleanExpressions() {
+    for (int i = 0; i < solutions.length; i++) {
+      print("Solution ${i + 1}:");
+      List<String> terms = [];
+      for (var group in solutions[i]) {
+        terms.add(groupToExpression(group));
+      }
+      print("Expression: " + terms.join(" + "));
+    }
+  }
+
   Widget _buildKMapGrid() {
     return Column(
       children: [
@@ -254,23 +287,39 @@ class _KMapPageState extends State<KMapPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Solutions found: ${solutions.length}'),
+                  //Text('Solutions found: ${solutions.length}'),
                   const SizedBox(height: 20),
                   ...solutions.asMap().entries.map((entry) {
                     final index = entry.key;
                     final groups = entry.value;
+                    final expression = groups
+                        .map(groupToExpression)
+                        .where((e) => e.isNotEmpty)
+                        .join(' + ');
 
                     return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
-                        Text('Solution ${index + 1}:'),
-                        SizedBox(height: 8),
+                        Text(
+                          'Solution ${index + 1}:',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.left,
+                        ),
+                        const SizedBox(height: 8),
                         CustomPaint(
-                          size: Size(100, 100),
+                          size: const Size(100, 100),
                           painter: KMapPainter(
                             widget.kMap,
                             _convertGroupsToRects(groups),
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Boolean Expression: $expression',
+                          style: const TextStyle(fontSize: 16),
+                          textAlign: TextAlign.left,
                         ),
                         const SizedBox(height: 20),
                       ],
