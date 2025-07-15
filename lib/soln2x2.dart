@@ -13,6 +13,7 @@ class KMapPage extends StatefulWidget {
 class _KMapPageState extends State<KMapPage> {
   List<List<int>> onesList = [];
   List<List<int>> xList = [];
+  List<List<List<List<int>>>> solutionsAll = [];
   List<List<List<List<int>>>> solutions = [];
   int currentSolutionIndex = 0;
 
@@ -20,7 +21,8 @@ class _KMapPageState extends State<KMapPage> {
   void initState() {
     super.initState();
     _extractValues();
-    solutions = _findAllSolutions(widget.kMap);
+    solutionsAll = _findAllSolutions(widget.kMap);
+    solutions = filterMinimalWeightSolutions(solutionsAll, widget.kMap);
   }
 
   void _extractValues() {
@@ -111,6 +113,81 @@ class _KMapPageState extends State<KMapPage> {
     return true;
   }
 
+  List<List<List<List<int>>>> filterMinimalWeightSolutions(
+    List<List<List<List<int>>>> allSolutions,
+    List<List<String>> kMap,
+  ) {
+    final totalRows = kMap.length;
+    final totalCols = kMap[0].length;
+
+    final onesPositions = <int>{};
+    for (int r = 0; r < totalRows; r++) {
+      for (int c = 0; c < totalCols; c++) {
+        if (kMap[r][c] == '1') {
+          onesPositions.add(r * totalCols + c);
+        }
+      }
+    }
+
+    if (onesPositions.isEmpty) {
+      return [];
+    }
+
+    bool coversAllOnesAndAtLeastOneOne(List<List<List<int>>> solution) {
+      final covered = <int>{};
+      for (var group in solution) {
+        for (var cell in group) {
+          covered.add(cell[0] * totalCols + cell[1]);
+        }
+      }
+
+      final coversAll = onesPositions.every(covered.contains);
+
+      final coversAtLeastOne = covered.any(onesPositions.contains);
+
+      return coversAll && coversAtLeastOne;
+    }
+
+    String solutionExpression(List<List<List<int>>> solution) {
+      List<String> terms = [];
+      for (var group in solution) {
+        terms.add(groupToExpression(group));
+      }
+      return terms.join(" + ");
+    }
+
+    final validSolutions =
+        allSolutions.where(coversAllOnesAndAtLeastOneOne).toList();
+
+    if (validSolutions.isEmpty) return [];
+
+    final weights = validSolutions
+        .map((sol) => computeBooleanWeight(solutionExpression(sol)))
+        .toList();
+
+    final minWeight = weights.reduce((a, b) => a < b ? a : b);
+
+    final minimalSolutions = <List<List<List<int>>>>[];
+    for (int i = 0; i < validSolutions.length; i++) {
+      if (weights[i] == minWeight) {
+        minimalSolutions.add(validSolutions[i]);
+      }
+    }
+
+    return minimalSolutions;
+  }
+
+  int computeBooleanWeight(String expression) {
+    int weight = 0;
+    for (int i = 0; i < expression.length; i++) {
+      final char = expression[i];
+      if (char == 'A' || char == 'B') {
+        weight++;
+      }
+    }
+    return weight;
+  }
+
   List<List<List<List<int>>>> _findAllSolutions(List<List<String>> kMap) {
     final allGroups = allPossibleGroups(kMap);
     final List<List<List<List<int>>>> validSolutions = [];
@@ -196,9 +273,9 @@ class _KMapPageState extends State<KMapPage> {
   }
 
   String groupToExpression(List<List<int>> group) {
-     if (group.length == 4) {
-    return "1";
-  }
+    if (group.length == 4) {
+      return "1";
+    }
     Set<String> aSet = {}, bSet = {};
     for (var coord in group) {
       aSet.add(coord[0] == 0 ? "0" : "1");
@@ -213,12 +290,10 @@ class _KMapPageState extends State<KMapPage> {
 
   void printBooleanExpressions() {
     for (int i = 0; i < solutions.length; i++) {
-      print("Solution ${i + 1}:");
       List<String> terms = [];
       for (var group in solutions[i]) {
         terms.add(groupToExpression(group));
       }
-      print("Expression: " + terms.join(" + "));
     }
   }
 
@@ -289,42 +364,49 @@ class _KMapPageState extends State<KMapPage> {
                 children: [
                   //Text('Solutions found: ${solutions.length}'),
                   const SizedBox(height: 20),
-                  ...solutions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final groups = entry.value;
-                    final expression = groups
-                        .map(groupToExpression)
-                        .where((e) => e.isNotEmpty)
-                        .join(' + ');
+                  solutions.isEmpty
+                      ? const Text(
+                          '0',
+                          style: TextStyle(fontSize: 16),
+                        )
+                      : Column(
+                          children: solutions.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final groups = entry.value;
+                            final expression = groups
+                                .map(groupToExpression)
+                                .where((e) => e.isNotEmpty)
+                                .join(' + ');
 
-                    return Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Solution ${index + 1}:',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.left,
-                        ),
-                        const SizedBox(height: 8),
-                        CustomPaint(
-                          size: const Size(100, 100),
-                          painter: KMapPainter(
-                            widget.kMap,
-                            _convertGroupsToRects(groups),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Boolean Expression: $expression',
-                          style: const TextStyle(fontSize: 16),
-                          textAlign: TextAlign.left,
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    );
-                  }).toList(),
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Solution ${index + 1}:',
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.left,
+                                ),
+                                const SizedBox(height: 8),
+                                CustomPaint(
+                                  size: const Size(100, 100),
+                                  painter: KMapPainter(
+                                    widget.kMap,
+                                    _convertGroupsToRects(groups),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Boolean Expression: $expression',
+                                  style: const TextStyle(fontSize: 16),
+                                  textAlign: TextAlign.left,
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            );
+                          }).toList(),
+                        )
                 ],
               ),
             ),
