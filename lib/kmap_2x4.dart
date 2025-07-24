@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'soln2x4.dart';
 
 class SlantedCell extends StatelessWidget {
   final String text;
@@ -21,7 +22,6 @@ class SlantedCell extends StatelessWidget {
             painter: SlantedCellPainter(),
             child: Container(),
           ),
-
           Align(
             alignment: Alignment(-0.5, 0.5),
             child: Text(
@@ -29,9 +29,8 @@ class SlantedCell extends StatelessWidget {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-
           Align(
-            alignment: Alignment(0.5, -0.5), 
+            alignment: Alignment(0.5, -0.5),
             child: Text(
               rightText,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -124,7 +123,7 @@ class _KMap2x4State extends State<KMap2x4> {
 
     setState(() {
       if (isPrime) {
-        dontCares.removeAll(newValues); 
+        dontCares.removeAll(newValues);
         primeImplicants = newValues;
       } else {
         primeImplicants.removeAll(newValues);
@@ -142,7 +141,9 @@ class _KMap2x4State extends State<KMap2x4> {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         TextField(
           controller: controller,
-          inputFormatters: [CommaInputFormatter(isPrime ? dontCares : primeImplicants)],
+          inputFormatters: [
+            CommaInputFormatter(isPrime ? dontCares : primeImplicants)
+          ],
           keyboardType: TextInputType.number,
           onChanged: (value) => updateMap(value, isPrime),
           decoration: const InputDecoration(
@@ -218,6 +219,69 @@ class _KMap2x4State extends State<KMap2x4> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.center,
+                child: TextButton.icon(
+                  onPressed: () {
+                    List<List<String>> kMap = [
+                      [
+                        primeImplicants.contains(0)
+                            ? "1"
+                            : (dontCares.contains(0) ? "X" : "0"),
+                        primeImplicants.contains(1)
+                            ? "1"
+                            : (dontCares.contains(1) ? "X" : "0"),
+                        primeImplicants.contains(3)
+                            ? "1"
+                            : (dontCares.contains(3) ? "X" : "0"),
+                        primeImplicants.contains(2)
+                            ? "1"
+                            : (dontCares.contains(2) ? "X" : "0"),
+                      ],
+                      [
+                        primeImplicants.contains(4)
+                            ? "1"
+                            : (dontCares.contains(4) ? "X" : "0"),
+                        primeImplicants.contains(5)
+                            ? "1"
+                            : (dontCares.contains(5) ? "X" : "0"),
+                        primeImplicants.contains(7)
+                            ? "1"
+                            : (dontCares.contains(7) ? "X" : "0"),
+                        primeImplicants.contains(6)
+                            ? "1"
+                            : (dontCares.contains(6) ? "X" : "0"),
+                      ],
+                    ];
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            KMap2x4Page(kMap: kMap),
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.check, color: Colors.white),
+                  label: Text(
+                    "Solve",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.blue.shade500,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    elevation: 3,
                   ),
                 ),
               ),
